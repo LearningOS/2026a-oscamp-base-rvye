@@ -162,7 +162,6 @@ pub fn double_in_thread(numbers: Vec<i32>) -> Vec<i32> {
     let handle = thread::spawn(move || {
         numbers.iter().map(|n| n * 2).collect::<Vec<i32>>()
     });
-
     handle.join().unwrap()
 }
 
@@ -174,15 +173,15 @@ pub fn parallel_sum(a: Vec<i32>, b: Vec<i32>) -> (i32, i32) {
     // TODO: Create two threads to sum a and b respectively
     // Join both threads to get results
     // todo!()
-
-    let h1 = thread::spawn(move || {
+    let s1 = thread::spawn(move || {
         a.iter().sum::<i32>()
     });
-    let h2 = thread::spawn(move || {
+
+    let s2 = thread::spawn(move || {
         b.iter().sum::<i32>()
     });
 
-    (h1.join().unwrap(), h2.join().unwrap())
+    (s1.join().unwrap(), s2.join().unwrap())
 }
 
 // ============================================================================
@@ -202,7 +201,7 @@ pub fn named_sleeper(value: i32, ms: u64) -> i32 {
     // TODO: Join the thread and return the value
     // todo!()
 
-    let builder = thread::Builder::new().name("sleeper".to_string());
+    let builder = thread::Builder::new() .name("sleeper".to_string());
     let handle = builder.spawn(move || {
         thread::sleep(Duration::from_millis(ms));
         value
@@ -225,9 +224,9 @@ pub fn increment_thread_local() -> usize {
     // TODO: Use THREAD_COUNT.with to increment and return the new count
     // todo!()
 
-    let v = THREAD_COUNT.with(|count| {
-        *count.borrow_mut() += 1;
-        *count.borrow()
+    let v = THREAD_COUNT.with(|c| {
+        *c.borrow_mut() += 1;
+        *c.borrow()
     });
 
     v
@@ -248,15 +247,13 @@ pub fn scoped_slice_sum(a: &[i32], b: &[i32]) -> (i32, i32) {
     // TODO: Wait for both threads and return the results
     // todo!()
 
-    thread::scope(|s| {
-        let h1 = s.spawn(|| {
-            a.iter().sum()
-        });
-        let h2 = s.spawn(|| {
-            b.iter().sum()
-        });
+    let r = thread::scope(|s| {
+        let h1 = s.spawn(|| a.iter().sum::<i32>());
+        let h2 = s.spawn(|| b.iter().sum::<i32>());
         (h1.join().unwrap(), h2.join().unwrap())
-    })
+    });
+
+    r
 }
 
 /// Handle a possible panic in a spawned thread.
@@ -275,7 +272,7 @@ pub fn handle_panic(value: i32, should_panic: bool) -> Result<i32, ()> {
     // TODO: Join and map the result appropriately
     // todo!()
 
-    let r = thread::spawn(move || {
+    let h = thread::spawn(move || {
         if should_panic {
             panic!("oops")
         } else {
@@ -283,10 +280,7 @@ pub fn handle_panic(value: i32, should_panic: bool) -> Result<i32, ()> {
         }
     });
 
-    match r.join() {
-        Ok(v) => Ok(v),
-        Err(_) => Err(()),
-    }
+    h.join().map_err(|_| ())
 }
 
 #[cfg(test)]
